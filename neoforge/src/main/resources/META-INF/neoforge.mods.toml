@@ -21,13 +21,13 @@ modId = "neoforge" #mandatory
 type = "required" #mandatory Can be one of "required", "optional", "incompatible" or "discouraged"
 versionRange = "[${neoforge_version},)" #mandatory
 ordering = "NONE" # The order that this dependency should load in relation to your mod, required to be either 'BEFORE' or 'AFTER' if the dependency is not mandatory
-side = "BOTH" # Side this dependency is applied on - 'BOTH', 'CLIENT' or 'SERVER'
+side = "SERVER" # Side this dependency is applied on - 'BOTH', 'CLIENT' or 'SERVER'
 [[dependencies."${mod_id}"]]
 modId = "minecraft"
 type = "required" #mandatory Can be one of "required", "optional", "incompatible" or "discouraged"
 versionRange = "${minecraft_version_range}"
 ordering = "NONE"
-side = "BOTH"
+side = "SERVER"
 
 [[dependencies."${mod_id}"]]
 modId = "betterpingdisplay"
