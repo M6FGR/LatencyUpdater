@@ -4,11 +4,14 @@
   "package": "m6fgr.latency_updater.mixin",
   "refmap": "${mod_id}.refmap.json",
   "compatibilityLevel": "JAVA_18",
-  "mixins": [],
-  "client": [
-    "MixinMinecraft"
+  "mixins": [
   ],
-  "server": [],
+  "client": [
+  ],
+  "server": [
+    "ServerCommonPacketListenerImplMixin",
+    "PlayerListMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }

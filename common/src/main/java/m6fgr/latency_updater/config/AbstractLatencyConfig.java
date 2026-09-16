@@ -10,7 +10,7 @@ public abstract class AbstractLatencyConfig {
         if (INSTANCE == null) {
             INSTANCE = ServiceLoader.load(AbstractLatencyConfig.class)
                     .findFirst()
-                    .orElseThrow(() -> new IllegalStateException("Failed to load PingConfig implementation"));
+                    .orElseThrow(() -> new IllegalStateException("Failed to load LatencyConfig implementation"));
         }
         return INSTANCE;
     }
@@ -19,9 +19,4 @@ public abstract class AbstractLatencyConfig {
      * @return The interval in ticks between tab-list ping updates (e.g., 20 ticks = 1s).
      */
     public abstract int getPingUpdateTicks();
-
-    /**
-     * @return The delay in milliseconds between keep-alive ping checks (e.g., 1000ms = 1s).
-     */
-    public abstract long getKeepAliveDelayMs();
 }

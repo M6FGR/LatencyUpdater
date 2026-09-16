@@ -34,6 +34,13 @@ neoForge {
             sourceSet sourceSets.main
         }
     }
+    dependencies {
+        // Loads all .jar files from Project/mods/client into the NeoForge test client runtime
+        def clientModsDir = rootProject.file("runtime/mods/neoforge/client")
+        if (clientModsDir.exists()) {
+            runtimeOnly files(clientModsDir.listFiles()?.findAll { it.name.endsWith(".jar") })
+        }
+    }
 }
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }

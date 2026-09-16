@@ -1,18 +1,11 @@
 package m6fgr.latency_updater;
 
-import net.fabricmc.api.ModInitializer;
+import net.fabricmc.api.DedicatedServerModInitializer;
 
-public class LatencyUpdatedCommon implements ModInitializer {
+public class LatencyUpdaterFabric extends LatencyUpdaterMod implements DedicatedServerModInitializer {
 
     @Override
-    public void onInitialize() {
-
-        // This method is invoked by the Fabric mod loader when it is ready
-        // to load your mod. You can access Fabric and Common code in this
-        // project.
-
-        // Use Fabric to bootstrap the Common mod.
-        Constants.LOG.info("Hello Fabric world!");
-        CommonClass.init();
+    public void onInitializeServer() {
+        LatencyUpdaterMod.init();
     }
 }

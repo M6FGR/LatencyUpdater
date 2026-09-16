@@ -4,7 +4,7 @@ plugins {
 }
 
 base {
-    archivesName = "${mod_id}-${project.name}-${minecraft_version}"
+    archivesName = "${mod_id}-${project.name}-${minecraft_version_display}"
 }
 
 java {
@@ -47,7 +47,7 @@ repositories {
 ['apiElements', 'runtimeElements', 'sourcesElements', 'javadocElements'].each { variant ->
     configurations."$variant".outgoing {
         capability("$group:${base.archivesName.get()}:$version")
-        capability("$group:$mod_id-${project.name}-${minecraft_version}:$version")
+        capability("$group:$mod_id-${project.name}-:$version")
         capability("$group:$mod_id:$version")
     }
     publishing.publications.configureEach {
@@ -81,6 +81,7 @@ processResources {
     var expandProps = ['version'                      : version,
                        'group'                        : project.group, //Else we target the task's group.
                        'minecraft_version'            : minecraft_version,
+                       'minecraft_version_display'    : minecraft_version_display,
                        'minecraft_version_range'      : minecraft_version_range,
                        'fabric_version'               : fabric_version,
                        'fabric_loader_version'        : fabric_loader_version,
@@ -91,12 +92,10 @@ processResources {
                        'description'                  : project.description,
                        'neoforge_version'             : neoforge_version,
                        'neoforge_loader_version_range': neoforge_loader_version_range,
-                       "forge_version"                : forge_version,
-                       "forge_loader_version_range"   : forge_loader_version_range,
                        'credits'                      : credits,
                        'java_version'                 : java_version]
 
-    filesMatching(['pack.mcmeta', 'fabric.mod.json', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml', '*.mixins.json']) {
+    filesMatching(['pack.mcmeta', 'fabric.mod.json', 'META-INF/neoforge.mods.toml', '*.mixins.json']) {
         expand expandProps
     }
     inputs.properties(expandProps)
