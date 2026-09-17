@@ -25,6 +25,7 @@ public abstract class ServerCommonPacketListenerImplMixin {
     @Shadow private boolean keepAlivePending;
     @Shadow private long keepAliveChallenge;
     @Shadow @Final protected Connection connection;
+    @Shadow @Final private static Component TIMEOUT_DISCONNECTION_MESSAGE;
 
     @Shadow public abstract void send(net.minecraft.network.protocol.Packet<?> packet);
 
@@ -35,9 +36,6 @@ public abstract class ServerCommonPacketListenerImplMixin {
     @Shadow protected abstract boolean isSingleplayerOwner();
 
     @Shadow private int latency;
-
-
-    @Shadow @Final private static Component TIMEOUT_DISCONNECTION_MESSAGE;
 
     // Unique fields and methods
 
@@ -60,7 +58,6 @@ public abstract class ServerCommonPacketListenerImplMixin {
     }
 
     // actual mixins
-
     @Inject(
             at = @At("HEAD"),
             method = "keepConnectionAlive",
