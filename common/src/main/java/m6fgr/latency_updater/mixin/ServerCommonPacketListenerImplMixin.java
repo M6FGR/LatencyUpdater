@@ -24,39 +24,22 @@ public abstract class ServerCommonPacketListenerImplMixin {
     @Shadow private long keepAliveTime;
     @Shadow private boolean keepAlivePending;
     @Shadow private long keepAliveChallenge;
+    @Shadow @Final protected Connection connection;
 
-    @Shadow
-    public abstract void send(net.minecraft.network.protocol.Packet<?> packet);
+    @Shadow public abstract void send(net.minecraft.network.protocol.Packet<?> packet);
 
-    @Shadow
-    @Final
-    protected MinecraftServer server;
+    @Shadow public abstract void disconnect(Component pReason);
 
-    @Shadow
-    public abstract void disconnect(Component pReason);
+    @Shadow protected abstract boolean checkIfClosed(long pTime);
 
-    @Shadow
-    @Final
-    protected Connection connection;
+    @Shadow protected abstract boolean isSingleplayerOwner();
 
-    @Shadow
-    protected abstract boolean checkIfClosed(long pTime);
+    @Shadow private int latency;
 
-    @Shadow
-    protected abstract boolean isSingleplayerOwner();
 
-    @Shadow
-    protected abstract GameProfile playerProfile();
+    @Shadow @Final private static Component TIMEOUT_DISCONNECTION_MESSAGE;
 
-    @Shadow
-    private int latency;
-
-    @Shadow
-    public abstract GameProfile getOwner();
-
-    @Shadow
-    @Final
-    private static Component TIMEOUT_DISCONNECTION_MESSAGE;
+    // Unique fields and methods
 
     @Unique
     private static final long TIMEOUT_THRESHOLD_MS = 15000L;
@@ -76,7 +59,14 @@ public abstract class ServerCommonPacketListenerImplMixin {
         return "Non-Player Connection";
     }
 
-    @Inject(method = "keepConnectionAlive", at = @At("HEAD"), remap = false, cancellable = true)
+    // actual mixins
+
+    @Inject(
+            at = @At("HEAD"),
+            method = "keepConnectionAlive",
+            remap = false,
+            cancellable = true
+    )
     private void onKeepConnectionAlive(CallbackInfo ci) {
         if (this.connection == null || !this.connection.isConnected()) {
             ci.cancel();
