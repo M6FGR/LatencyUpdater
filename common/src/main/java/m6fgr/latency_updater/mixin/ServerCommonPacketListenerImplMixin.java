@@ -1,19 +1,24 @@
 package m6fgr.latency_updater.mixin;
 
+import com.mojang.authlib.GameProfile;
 import m6fgr.latency_updater.LatencyUpdaterMod;
 import m6fgr.latency_updater.config.AbstractLatencyConfig;
+import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.ClientboundKeepAlivePacket;
+import net.minecraft.network.protocol.common.ServerboundKeepAlivePacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerCommonPacketListenerImpl;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(value = ServerCommonPacketListenerImpl.class, priority = 1005)
+@Mixin(value = ServerCommonPacketListenerImpl.class, priority = 1005, remap = false)
 public abstract class ServerCommonPacketListenerImplMixin {
 
     @Shadow private long keepAliveTime;
@@ -30,29 +35,123 @@ public abstract class ServerCommonPacketListenerImplMixin {
     @Shadow
     public abstract void disconnect(Component pReason);
 
-    @Inject(method = "keepConnectionAlive", at = @At("HEAD"), cancellable = true)
-    private void onKeepConnectionAlive(CallbackInfo ci) {
-        long currentTime = System.nanoTime() / 1000000L;
-        long intervalMs = AbstractLatencyConfig.get().getPingUpdateTicks() * 50L;
-        boolean shouldDebug = AbstractLatencyConfig.get().shouldDebugLog();
+    @Shadow
+    @Final
+    protected Connection connection;
 
-        if (currentTime - this.keepAliveTime >= intervalMs) {
+    @Shadow
+    protected abstract boolean checkIfClosed(long pTime);
+
+    @Shadow
+    protected abstract boolean isSingleplayerOwner();
+
+    @Shadow
+    protected abstract GameProfile playerProfile();
+
+    @Shadow
+    private int latency;
+
+    @Shadow
+    public abstract GameProfile getOwner();
+
+    @Shadow
+    @Final
+    private static Component TIMEOUT_DISCONNECTION_MESSAGE;
+
+    @Unique
+    private static final long TIMEOUT_THRESHOLD_MS = 15000L;
+
+    @Unique
+    private long getCurrentTimeMs() {
+        return System.nanoTime() / 1_000_000L;
+    }
+
+    @Unique
+    private String getPlayerName() {
+        if ((Object) this instanceof ServerGamePacketListenerImpl gameListener) {
+            if (gameListener.player != null) {
+                return gameListener.player.getScoreboardName();
+            }
+        }
+        return "Non-Player Connection";
+    }
+
+    @Inject(method = "keepConnectionAlive", at = @At("HEAD"), remap = false, cancellable = true)
+    private void onKeepConnectionAlive(CallbackInfo ci) {
+        if (this.connection == null || !this.connection.isConnected()) {
+            ci.cancel();
+            return;
+        }
+
+        long currentTime = this.getCurrentTimeMs();
+        long intervalMs = AbstractLatencyConfig.get().getPingUpdateTicks() * 50L;
+
+        if (!this.isSingleplayerOwner() && currentTime - this.keepAliveTime >= intervalMs) {
             if (this.keepAlivePending) {
-                long time = currentTime - keepAliveTime;
-                this.disconnect(Component.literal(
-                "keepAliveTime was more than " + time + "ms while it was pending! Issue came from Ping Updater mod."
-                ));
-            } else {
+                long time = currentTime - this.keepAliveTime;
+                if (time >= TIMEOUT_THRESHOLD_MS) {
+                    this.disconnect(Component.literal("Timed out: No keep-alive response received for " + time + "ms."));
+                }
+            } else if (this.checkIfClosed(currentTime)) {
                 this.keepAlivePending = true;
                 this.keepAliveTime = currentTime;
                 this.keepAliveChallenge = currentTime;
                 this.send(new ClientboundKeepAlivePacket(this.keepAliveChallenge));
-                if (shouldDebug) {
-                    LatencyUpdaterMod.LOG.debug("From SCPLI: Sent ClientBoundKeepAlivePacket");
-                    LatencyUpdaterMod.LOG.debug("Sent a message to keep the connection alive from ServerCommonPacketListenerImpl class");
-                }
             }
         }
         ci.cancel();
+    }
+
+    @Inject(
+            at = @At("HEAD"),
+            method = "handleKeepAlive",
+            remap = false,
+            cancellable = true
+    )
+    private void logPingUpdates(ServerboundKeepAlivePacket pPacket, CallbackInfo ci) {
+        ci.cancel();
+
+        long currentTime = this.getCurrentTimeMs();
+
+        if (this.keepAlivePending && pPacket.getId() == this.keepAliveChallenge) {
+            // rtt = Round-Trip Time
+            int rtt = (int) (currentTime - this.keepAliveTime);
+
+
+            if (rtt < 0) {
+                LatencyUpdaterMod.LOG.error(
+                        "Failed to calculate ping for {}: Invalid negative RTT calculated ({} ms). Skipping calculation.",
+                        this.getPlayerName(),
+                        rtt
+                );
+            } else {
+                this.latency = (this.latency * 3 + rtt) / 4;
+                this.keepAlivePending = false;
+
+                if (AbstractLatencyConfig.get().shouldDebugLog()) {
+                    LatencyUpdaterMod.LOG.info(
+                            "Updated latency for {}: {} ms (RTT: {} ms)",
+                            this.getPlayerName(),
+                            this.latency,
+                            rtt
+                    );
+                }
+            }
+        } else {
+            // Invalid packet payload / challenge mismatch debugging
+            if (AbstractLatencyConfig.get().shouldDebugLog()) {
+                LatencyUpdaterMod.LOG.warn(
+                        "Failed to update ping for {}: Challenge ID mismatch or unexpected packet! Received: {}, Expected: {} (Pending: {})",
+                        this.getPlayerName(),
+                        pPacket.getId(),
+                        this.keepAliveChallenge,
+                        this.keepAlivePending
+                );
+            }
+
+            if (!this.isSingleplayerOwner()) {
+                this.disconnect(TIMEOUT_DISCONNECTION_MESSAGE);
+            }
+        }
     }
 }
