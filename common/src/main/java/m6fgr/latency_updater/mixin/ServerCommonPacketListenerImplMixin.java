@@ -1,7 +1,7 @@
 package m6fgr.latency_updater.mixin;
 
+import m6fgr.latency_updater.LatencyUpdaterMod;
 import m6fgr.latency_updater.config.AbstractLatencyConfig;
-import net.minecraft.Util;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.ClientboundKeepAlivePacket;
 import net.minecraft.server.MinecraftServer;
@@ -32,8 +32,9 @@ public abstract class ServerCommonPacketListenerImplMixin {
 
     @Inject(method = "keepConnectionAlive", at = @At("HEAD"), cancellable = true)
     private void onKeepConnectionAlive(CallbackInfo ci) {
-        long currentTime = Util.getMillis();
+        long currentTime = System.nanoTime() / 1000000L;
         long intervalMs = AbstractLatencyConfig.get().getPingUpdateTicks() * 50L;
+        boolean shouldDebug = AbstractLatencyConfig.get().shouldDebugLog();
 
         if (currentTime - this.keepAliveTime >= intervalMs) {
             if (this.keepAlivePending) {
@@ -46,6 +47,10 @@ public abstract class ServerCommonPacketListenerImplMixin {
                 this.keepAliveTime = currentTime;
                 this.keepAliveChallenge = currentTime;
                 this.send(new ClientboundKeepAlivePacket(this.keepAliveChallenge));
+                if (shouldDebug) {
+                    LatencyUpdaterMod.LOG.debug("From SCPLI: Sent ClientBoundKeepAlivePacket");
+                    LatencyUpdaterMod.LOG.debug("Sent a message to keep the connection alive from ServerCommonPacketListenerImpl class");
+                }
             }
         }
         ci.cancel();

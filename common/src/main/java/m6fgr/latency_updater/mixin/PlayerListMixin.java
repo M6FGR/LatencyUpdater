@@ -1,5 +1,6 @@
 package m6fgr.latency_updater.mixin;
 
+import m6fgr.latency_updater.LatencyUpdaterMod;
 import m6fgr.latency_updater.config.AbstractLatencyConfig;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
@@ -32,6 +33,7 @@ public abstract class PlayerListMixin {
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
     private void onTick(CallbackInfo ci) {
         int updateInterval = AbstractLatencyConfig.get().getPingUpdateTicks();
+        boolean shouldDebug = AbstractLatencyConfig.get().shouldDebugLog();
 
         if (++this.sendAllPlayerInfoIn > updateInterval) {
             this.broadcastAll(new ClientboundPlayerInfoUpdatePacket(
@@ -39,6 +41,11 @@ public abstract class PlayerListMixin {
                     this.players
             ));
             this.sendAllPlayerInfoIn = 0;
+            if (shouldDebug) {
+                LatencyUpdaterMod.LOG.debug("From PlayerList: Sent a ClientBoundInfoUpdatePacket");
+                LatencyUpdaterMod.LOG.debug("Sent a message to the client to update the ping from PlayerList class");
+
+            }
         }
         ci.cancel();
     }

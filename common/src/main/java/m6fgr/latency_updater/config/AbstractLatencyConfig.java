@@ -19,4 +19,9 @@ public abstract class AbstractLatencyConfig {
      * @return The interval in ticks between tab-list ping updates (e.g., 20 ticks = 1s).
      */
     public abstract int getPingUpdateTicks();
+
+    /**
+     * @return Weather a debug message should log or no in the server logs
+     */
+    public abstract boolean shouldDebugLog();
 }

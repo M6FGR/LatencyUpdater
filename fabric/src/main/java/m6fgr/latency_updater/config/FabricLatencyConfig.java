@@ -62,7 +62,14 @@ public class FabricLatencyConfig extends AbstractLatencyConfig {
         return this.data.pingUpdateTicks;
     }
 
+    @Override
+    public boolean shouldDebugLog() {
+        this.checkFileUpdate();
+        return this.data.debugLog;
+    }
+
     private static class ConfigData {
         int pingUpdateTicks = 20;
+        boolean debugLog = false;
     }
 }

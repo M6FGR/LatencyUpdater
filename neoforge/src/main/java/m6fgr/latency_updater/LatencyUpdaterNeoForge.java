@@ -15,9 +15,6 @@ import net.neoforged.fml.loading.FMLLoader;
 public class LatencyUpdaterNeoForge extends LatencyUpdaterMod {
 
     public LatencyUpdaterNeoForge(IEventBus eventBus, ModContainer container) {
-        if (FMLLoader.getDist().isClient()) {
-            return;
-        }
         LatencyUpdaterMod.init();
         container.registerConfig(ModConfig.Type.SERVER, NeoForgeLatencyConfig.SPEC);
     }
