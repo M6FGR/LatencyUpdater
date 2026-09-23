@@ -17,22 +17,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.EnumSet;
 import java.util.List;
 
-@Mixin(value = PlayerList.class, priority = 1005)
+@Mixin(value = PlayerList.class, priority = 1005, remap = false)
 public abstract class PlayerListMixin {
 
-    @Shadow
-    private int sendAllPlayerInfoIn;
+    @Shadow private int sendAllPlayerInfoIn;
 
-    @Shadow
-    public abstract void broadcastAll(Packet<?> packet);
+    @Shadow public abstract void broadcastAll(Packet<?> packet);
 
-    @Shadow
-    @Final
-    private List<ServerPlayer> players;
+    @Shadow @Final private List<ServerPlayer> players;
 
-    @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "tick", at = @At("HEAD"), remap = false, cancellable = true)
     private void onTick(CallbackInfo ci) {
-        int updateInterval = AbstractLatencyConfig.get().getPingUpdateTicks();
+        int updateInterval = AbstractLatencyConfig.getInstance().getPingUpdateTicks();
 
         if (++this.sendAllPlayerInfoIn > updateInterval) {
             this.broadcastAll(new ClientboundPlayerInfoUpdatePacket(

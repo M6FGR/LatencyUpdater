@@ -4,15 +4,17 @@
   "package": "m6fgr.latency_updater.mixin",
   "refmap": "${mod_id}.refmap.json",
   "compatibilityLevel": "JAVA_18",
-  "mixins": [
-  ],
-  "client": [
-  ],
+  "mixins": [],
+  "client": [],
   "server": [
     "ServerCommonPacketListenerImplMixin",
     "PlayerListMixin"
   ],
   "injectors": {
     "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": false
   }
+
 }

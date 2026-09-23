@@ -1,17 +1,12 @@
 package m6fgr.latency_updater.config;
 
-import java.util.ServiceLoader;
+import m6fgr.latency_updater.LatencyUpdaterMod;
 
 public abstract class AbstractLatencyConfig {
 
-    private static AbstractLatencyConfig INSTANCE;
+    private static final AbstractLatencyConfig INSTANCE = LatencyUpdaterMod.loadService(AbstractLatencyConfig.class);
 
-    public static AbstractLatencyConfig get() {
-        if (INSTANCE == null) {
-            INSTANCE = ServiceLoader.load(AbstractLatencyConfig.class)
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalStateException("Failed to load LatencyConfig implementation"));
-        }
+    public static AbstractLatencyConfig getInstance() {
         return INSTANCE;
     }
 
